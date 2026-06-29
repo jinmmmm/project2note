@@ -1,0 +1,14 @@
+fastapi==0.115.6
+uvicorn[standard]==0.32.1
+sqlalchemy==2.0.36
+pydantic==2.10.3
+pydantic-settings==2.6.1
+python-multipart==0.0.19
+httpx==0.28.1
+python-dotenv==1.0.1
+yt-dlp==2024.12.13
+openai==1.57.4
+markdown==3.7
+markdown-pdf==1.5
+Pillow==10.4.0
+aiofiles==24.1.0

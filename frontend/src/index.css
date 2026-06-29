@@ -1,0 +1,211 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  @apply bg-slate-100 text-slate-900 antialiased;
+}
+
+/* Note markdown typography */
+.note-content {
+  @apply text-slate-700 leading-relaxed;
+}
+
+.note-content ::selection {
+  background: rgba(191, 219, 254, 0.95);
+  color: rgb(30 41 59);
+}
+
+.note-content ::-moz-selection {
+  background: rgba(191, 219, 254, 0.95);
+  color: rgb(30 41 59);
+}
+
+/* CSS Highlight API — persists even when selection becomes inactive (portal/focus change) */
+::highlight(selection-ask) {
+  background-color: rgba(191, 219, 254, 0.95);
+  color: rgb(30 41 59);
+}
+
+.note-h1 {
+  @apply text-2xl font-bold text-slate-900 mt-8 mb-4 pb-2 border-b border-slate-200;
+}
+
+.note-heading-block {
+  @apply mt-8 mb-3 first:mt-0;
+}
+
+.note-heading-ts {
+  @apply pl-0.5;
+}
+
+.note-heading-row {
+  @apply mt-0 mb-0;
+}
+
+.note-heading-row .note-h2,
+.note-heading-row .note-h3 {
+  @apply mt-0 mb-0;
+}
+
+.note-h2 {
+  @apply text-lg font-semibold text-slate-900 mt-8 mb-3;
+}
+
+.note-h3 {
+  @apply text-base font-semibold text-slate-800 mt-6 mb-2;
+}
+
+.note-h4 {
+  @apply text-sm font-medium text-slate-700 mt-4 mb-2;
+}
+
+.note-p {
+  @apply text-[15px] leading-7 text-slate-700 mb-4;
+}
+
+.note-ul {
+  @apply mb-4 space-y-2 pl-1;
+}
+
+.note-ol {
+  @apply mb-4 space-y-2 pl-5 list-decimal;
+}
+
+.note-li {
+  @apply text-[15px] leading-7 text-slate-700 pl-1;
+}
+
+.note-ul > .note-li {
+  @apply relative pl-5;
+}
+
+.note-ul > .note-li::before {
+  content: '·';
+  @apply absolute left-0 font-bold text-blue-500 text-lg leading-7;
+}
+
+.note-strong {
+  @apply font-semibold text-slate-900;
+}
+
+.note-blockquote {
+  @apply border-l-4 border-blue-200 bg-blue-50/50 pl-4 py-2 my-4 text-sm text-slate-600 italic rounded-r-lg;
+}
+
+.note-hr {
+  @apply my-8 border-slate-200;
+}
+
+.note-mark {
+  @apply bg-amber-100 text-amber-900 px-1 rounded;
+}
+
+.note-code-inline {
+  @apply rounded bg-slate-100 px-1.5 py-0.5 text-sm font-mono text-pink-600;
+}
+
+.note-pre {
+  @apply my-4 overflow-x-auto rounded-xl bg-slate-900 p-4;
+}
+
+.note-code-block {
+  @apply text-sm font-mono text-slate-100;
+}
+
+.note-link {
+  @apply text-blue-600 underline underline-offset-2 hover:text-blue-800;
+}
+
+.term-with-hint {
+  @apply mr-1.5;
+}
+
+.term-with-hint .term-hint-btn {
+  @apply cursor-help;
+}
+
+/* 术语与 ? 占独立行内槽位，避免相邻术语互相遮挡 */
+.note-p .term-with-hint,
+.note-li .term-with-hint {
+  @apply whitespace-normal;
+}
+
+.note-timestamp {
+  @apply font-mono text-xs text-blue-600;
+}
+
+.note-timestamp-btn {
+  @apply inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 transition-colors hover:border-blue-400 hover:bg-blue-100 hover:text-blue-800 cursor-pointer;
+}
+
+mark {
+  @apply bg-amber-100 text-amber-900 px-0.5 rounded;
+}
+
+.note-content-beginner {
+  @apply leading-8;
+}
+
+.note-content-beginner .note-p,
+.note-content-beginner .note-li {
+  @apply leading-8;
+}
+
+.note-content-professional {
+  @apply leading-snug;
+}
+
+.note-content-professional .note-p,
+.note-content-professional .note-li {
+  @apply text-[14px] leading-6 mb-2;
+}
+
+.note-content-professional .note-heading-block {
+  @apply mt-6 mb-2;
+}
+
+.note-content-professional .note-h2 {
+  @apply mt-6 mb-2;
+}
+
+.note-content-professional .note-h3 {
+  @apply mt-4 mb-1;
+}
+
+.note-image-wrap {
+  @apply relative my-4 inline-block max-w-full align-top;
+}
+
+.note-image-button {
+  @apply block max-w-full border-0 bg-transparent p-0 text-left;
+}
+
+.note-image {
+  @apply block h-auto max-w-full cursor-zoom-in rounded-xl border border-slate-200 bg-white object-contain shadow-sm transition-shadow hover:shadow-md;
+}
+
+.note-image-delete {
+  @apply absolute right-2 top-2 inline-flex h-7 w-7 items-center justify-center rounded-full border border-red-100 bg-white/90 text-red-500 opacity-0 shadow-sm transition-opacity hover:bg-red-50 hover:text-red-600;
+}
+
+.note-image-wrap:hover .note-image-delete,
+.note-image-wrap:hover .note-image-resize-handle {
+  @apply opacity-100;
+}
+
+.note-image-resize-handle {
+  @apply absolute bottom-1 right-1 h-4 w-4 cursor-nwse-resize rounded-br-lg border-b-2 border-r-2 border-blue-500 bg-white/70 opacity-0 shadow-sm;
+}
+
+.note-image-preview-backdrop {
+  @apply fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-6;
+}
+
+.note-image-preview {
+  @apply max-h-[90vh] max-w-[90vw] rounded-xl bg-white object-contain shadow-2xl;
+}
+
+.note-image-preview-close {
+  @apply absolute right-5 top-5 inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/90 text-slate-700 shadow hover:bg-white;
+}

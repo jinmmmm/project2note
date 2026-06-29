@@ -1,0 +1,5 @@
+# 可选：AI 问答 RAG 向量检索（macOS 需先 brew install cmake）
+chromadb==0.5.23
+
+# 可选：本地 ASR（默认用 Groq 在线转写，可不装）
+faster-whisper==1.1.0
