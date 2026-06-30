@@ -26,6 +26,7 @@ from app.services.recommendation_service import (
     sync_recommendations_from_note,
 )
 from app.integrations.bilibili_search import extract_keywords_from_note
+from app.utils.crypto import decrypt_secret
 from app.services.note_index_service import reindex_task_note
 from app.services.vector_store import vector_store
 from app.gpt.note_llm import NoteLLM
@@ -664,7 +665,7 @@ async def polish_note(task_id: str, req: PolishNoteRequest, db: Session = Depend
         section_range = (start, end)
 
     try:
-        llm = NoteLLM(provider.api_key, provider.base_url, _runtime_model_name(task, user_llm_config))
+        llm = NoteLLM(decrypt_secret(provider.api_key), provider.base_url, _runtime_model_name(task, user_llm_config))
         polished = await asyncio.to_thread(
             llm.polish_markdown, target, req.instruction or "", task.style
         )
@@ -833,7 +834,7 @@ async def generate_mindmap_route(task_id: str, req: GenerateMindmapRequest, db: 
         raise BizException(400, "未配置 LLM 供应商，请先在设置中添加")
 
     try:
-        llm = NoteLLM(provider.api_key, provider.base_url, _runtime_model_name(task, user_llm_config))
+        llm = NoteLLM(decrypt_secret(provider.api_key), provider.base_url, _runtime_model_name(task, user_llm_config))
         tree = await asyncio.to_thread(generate_mindmap, llm, markdown, req.video_type, req.instruction)
     except Exception as e:
         raise BizException(500, f"AI 导图生成失败：{e}")

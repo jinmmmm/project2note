@@ -17,6 +17,7 @@ from app.transcriber.factory import get_transcriber, get_fallback_transcribers
 from app.services.transcript_cleaner import clean_transcript
 from app.utils.ffmpeg_helper import extract_audio, extract_audio_async
 from app.utils.time_utils import now_local_str
+from app.utils.crypto import decrypt_secret
 from app.gpt.note_llm import NoteLLM
 from app.gpt.prompts import postprocess_note_markdown, embed_screenshots_into_note
 from app.services.screenshot_vision_refine import VisionRefineClient
@@ -91,7 +92,7 @@ def _build_vision_client(db: Session, task: Task, user_llm_config: Optional[dict
     if not provider or not provider.api_key:
         return None
     return VisionRefineClient(
-        api_key=provider.api_key,
+        api_key=decrypt_secret(provider.api_key),
         base_url=provider.base_url,
         model_name=settings.vision_model_name,
     )
@@ -194,7 +195,7 @@ async def run_regenerate_pipeline(task_id: str, user_llm_config: Optional[dict] 
         )
 
         try:
-            llm = NoteLLM(provider.api_key, provider.base_url, _runtime_model_name(task, user_llm_config))
+            llm = NoteLLM(decrypt_secret(provider.api_key), provider.base_url, _runtime_model_name(task, user_llm_config))
             on_progress = _make_note_progress_callback(task_id)
             _update_task(db, task_id, progress="web_search")
             web_context = await _load_or_fetch_web_context(db, task, full_text, note_title, llm)
@@ -451,7 +452,7 @@ async def run_pipeline(task_id: str, user_llm_config: Optional[dict] = None):
             return
 
         try:
-            llm = NoteLLM(provider.api_key, provider.base_url, _runtime_model_name(task, user_llm_config))
+            llm = NoteLLM(decrypt_secret(provider.api_key), provider.base_url, _runtime_model_name(task, user_llm_config))
             generated_at = now_local_str()
             on_progress = _make_note_progress_callback(task_id)
             _update_task(db, task_id, progress="web_search")

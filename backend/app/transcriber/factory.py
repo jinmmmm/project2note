@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 
 from app.config import settings
 from app.db.database import ProviderConfig
+from app.utils.crypto import decrypt_secret
 from app.services.transcriber_config_manager import transcriber_config_manager
 from app.transcriber.base import BaseTranscriber
 from app.transcriber.bcut import BcutTranscriber
@@ -27,7 +28,7 @@ def _resolve_groq_api_key(db: Optional[Session] = None) -> str:
     if db:
         for row in db.query(ProviderConfig).all():
             if row.id == "groq" or "groq.com" in (row.base_url or ""):
-                return row.api_key or ""
+                return decrypt_secret(row.api_key) or ""
     return ""
 
 

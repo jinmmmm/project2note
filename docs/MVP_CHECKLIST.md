@@ -2,86 +2,90 @@
 
 ## 阶段 0：脚手架
 
-- [ ] backend FastAPI 启动于 8483
-- [ ] frontend Vite dev 启动于 3015
-- [ ] SQLite 表自动初始化
-- [ ] 统一 ResponseWrapper 与异常处理
-- [ ] Docker Compose 可一键启动
-- [ ] `.env.example` 文档完整
+- [x] backend FastAPI 启动于 8483
+- [x] frontend Vite dev 启动于 3015
+- [x] SQLite 表自动初始化
+- [x] 统一 ResponseWrapper 与异常处理
+- [x] Docker Compose 可一键启动
+- [x] `.env.example` 文档完整
 
 ## 阶段 1：视频输入 + 任务
 
-- [ ] POST /api/upload 支持 mp4/mov
-- [ ] POST /api/tasks 支持 bilibili/douyin/local
-- [ ] Cookie 管理 API 可用
-- [ ] 任务三态：PENDING/PROCESSING/COMPLETED/FAILED
-- [ ] 前端任务列表三态筛选
-- [ ] 失败任务展示 error_message
-- [ ] 3s 轮询 status
-- [ ] Cookie 失效有明确提示
+- [x] POST /api/upload 支持 mp4/mov
+- [x] POST /api/tasks 支持 bilibili/douyin/local
+- [x] Cookie 管理 API 可用
+- [x] 任务三态：PENDING/PROCESSING/COMPLETED/FAILED
+- [x] 前端任务列表三态筛选
+- [x] 失败任务展示 error_message
+- [x] 3s 轮询 status
+- [x] Cookie 失效有明确提示
 
 ## 阶段 2：逐字稿
 
-- [ ] GET/POST /api/settings/transcriber_config 可用
-- [ ] 设置页可切换转写引擎（必剪/快手/Whisper 本地/Groq）
-- [ ] B 站链接优先拉官方字幕，有字幕时跳过 ASR
-- [ ] 无字幕时 FFmpeg 抽音频 + ASR 转写生成 segments
-- [ ] 语气词过滤生效
-- [ ] 复读去重生效
-- [ ] 逐字稿独立 Tab 展示
-- [ ] 点击时间戳跳转视频
+- [x] GET/POST /api/settings/transcriber_config 可用
+- [x] 设置页可切换转写引擎（必剪/快手/Whisper 本地/Groq）
+- [x] B 站链接优先拉官方字幕，有字幕时跳过 ASR
+- [x] 无字幕时 FFmpeg 抽音频 + ASR 转写生成 segments
+- [x] 语气词过滤生效
+- [x] 复读去重生效
+- [x] 逐字稿独立 Tab 展示
+- [x] 点击时间戳跳转视频
 
 ## 阶段 3：结构化笔记
 
-- [ ] 六板块完整输出
-- [ ] 小白学习版 / 专业精简版可切换
-- [ ] 详细 / 精简模式可切换
-- [ ] 长视频分块生成 + 合并
-- [ ] 术语解释板块（小白含比喻）
-- [ ] 延伸知识点关键词列表
+- [x] 四板块完整输出（视频基础信息 → 结构化笔记 → 工具/版本补充 → 延伸知识点）
+- [x] 小白学习版 / 专业精简版可切换
+- [x] 长视频分块生成 + 合并
+- [x] 术语悬浮释义（隐藏注释块，前端 ? 气泡展示）
+- [x] 延伸知识点关键词列表
 
 ## 阶段 4：B站推荐
 
-- [ ] 延伸知识点 B 站视频搜索
-- [ ] 每知识点 1-2 个视频
-- [ ] 关键词可编辑 + 刷新
-- [ ] 推荐仅展示不自动生成笔记
+- [x] 延伸知识点 B 站视频搜索
+- [x] 每知识点 1-2 个视频
+- [x] 关键词可编辑 + 刷新
+- [x] 推荐仅展示不自动生成笔记
 
 ## 阶段 5：编辑 + 导出
 
-- [ ] Markdown 编辑器可编辑保存
-- [ ] PUT /note 持久化编辑内容
-- [ ] MD 导出编辑后版本
-- [ ] PDF 导出保留层级高亮
+- [x] Markdown 编辑器可编辑保存
+- [x] PUT /note 持久化编辑内容
+- [x] MD 导出编辑后版本
+- [x] PDF 导出保留层级高亮
 
 ## 阶段 6：AI 问答
 
-- [ ] 独立 Tab「AI 问答答疑」
-- [ ] RAG 基于逐字稿 + 笔记
-- [ ] 自由提问可用
-- [ ] 聊天记录持久化
-- [ ] 风格与笔记一致
-- [ ] 关闭重开可继续对话
+- [x] 独立 Tab「AI 问答答疑」
+- [x] RAG 基于逐字稿 + 笔记
+- [x] 自由提问可用
+- [x] 聊天记录持久化
+- [x] 风格与笔记一致
+- [x] 关闭重开可继续对话
 
 ## 阶段 7：飞书同步
 
-- [ ] OAuth 授权流程
-- [ ] 文件夹选择
-- [ ] 云文档同步
-- [ ] 多维表格新增记录
-- [ ] 手动点击触发
+- [x] OAuth 授权流程
+- [x] 文件夹选择
+- [x] 云文档同步
+- [x] 多维表格新增记录
+- [x] 手动点击触发
 
 ## 阶段 8：分享
 
-- [ ] 生成公开链接
-- [ ] 访客只读全板块可见
-- [ ] 无需登录访问
+- [x] 生成公开链接
+- [x] 访客只读全板块可见
+- [x] 无需登录访问
 
 ## 阶段 9：联调部署
 
-- [ ] 全链路错误文案规范
-- [ ] 不自动重试，仅手动重试
-- [ ] Docker 部署验证
+- [x] 全链路错误文案规范
+- [x] 不自动重试，仅手动重试
+- [x] Docker 部署验证
+
+## 阶段 10：安全加固
+
+- [x] API Key Fernet 加密落库（AES-128-CBC + HMAC-SHA256）
+- [x] 密钥由 AUTH_SECRET_KEY 派生，不硬编码
 
 ---
 

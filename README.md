@@ -54,11 +54,9 @@ docker-compose up --build
 
 ## 文档
 
-- [PRD 分析](docs/PRD_ANALYSIS.md)
 - [架构设计](docs/ARCHITECTURE.md)
 - [API 设计](docs/API_DESIGN.md)
 - [MVP 验收清单](docs/MVP_CHECKLIST.md)
-- [路线图](docs/ROADMAP.md)
 
 ## 配置
 
@@ -73,4 +71,4 @@ docker-compose up --build
 | SMART_SCREENSHOT_WINDOW_SECONDS | 智能截图搜索窗口秒数（默认 5） |
 | SMART_SCREENSHOT_MIN_SCORE | 智能截图最低质量分（默认 0.3；低于阈值不插图） |
 
-LLM API Key 通过 Web 设置页配置，存入本地 SQLite。
+LLM API Key 通过 Web 设置页配置，落库前用 Fernet（AES-128-CBC）加密，密钥由 `AUTH_SECRET_KEY` 派生。**部署前请将 `.env` 中 `AUTH_SECRET_KEY` 改为强随机字符串。**

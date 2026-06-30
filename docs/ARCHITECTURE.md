@@ -76,7 +76,7 @@ project2note/
 │   │   ├── db/               # 数据库
 │   │   ├── models/           # Pydantic 模型
 │   │   ├── exceptions/       # 异常处理
-│   │   └── utils/            # 工具函数
+│   │   └── utils/            # 工具函数（含 crypto.py AES 加解密）
 │   ├── main.py
 │   └── requirements.txt
 ├── frontend/
@@ -153,7 +153,7 @@ PENDING → PROCESSING → COMPLETED
 | transcriber | TranscriberFactory，按 transcriber_config 选择引擎 |
 | transcriber_config_manager | 转写引擎持久化（`data/config/transcriber.json`） |
 | transcript_cleaner | 语气词过滤 + 复读去重 |
-| note_generator | 分块 LLM 调用 + 六板块 Prompt |
+| note_generator | 分块 LLM 调用 + 四板块 Prompt |
 | vector_store | ChromaDB 按 task_id 隔离 |
 | chat_service | RAG + Tool Calling + 风格注入 |
 | feishu_oauth | OAuth2 授权与 token 刷新 |
@@ -181,8 +181,8 @@ flowchart LR
 
 ## 8. 安全与隐私
 
-- MVP 无多用户认证（个人自用）
-- Cookie / API Key 存 SQLite，不提交 git
+- API Key 落库前 Fernet（AES-128-CBC + HMAC-SHA256）加密，密钥由 `AUTH_SECRET_KEY` 派生
+- Cookie / 加密 Key 存 SQLite，不提交 git
 - 分享链接 UUID 不可猜测
 - CORS 限制 localhost + 配置域名
 

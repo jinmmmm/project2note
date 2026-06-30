@@ -10,6 +10,7 @@ from app.auth import get_current_user
 from app.exceptions.biz_exception import BizException
 from app.config import settings
 from app.services.transcriber_config_manager import transcriber_config_manager
+from app.utils.crypto import encrypt_secret
 from app.utils.response import success
 
 router = APIRouter(prefix="/settings", tags=["settings"])
@@ -85,11 +86,11 @@ def upsert_provider(req: ProviderRequest, db: Session = Depends(get_db), current
     pid = req.id or str(uuid.uuid4())
     row = db.query(ProviderConfig).filter(ProviderConfig.id == pid, ProviderConfig.user_id == current_user.id).first()
     if not row:
-        row = ProviderConfig(id=pid, user_id=current_user.id, name=req.name, api_key=req.api_key, base_url=req.base_url, enabled=req.enabled)
+        row = ProviderConfig(id=pid, user_id=current_user.id, name=req.name, api_key=encrypt_secret(req.api_key), base_url=req.base_url, enabled=req.enabled)
         db.add(row)
     else:
         row.name = req.name
-        row.api_key = req.api_key
+        row.api_key = encrypt_secret(req.api_key)
         row.base_url = req.base_url
         row.enabled = req.enabled
     db.commit()

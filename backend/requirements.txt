@@ -12,3 +12,4 @@ markdown==3.7
 markdown-pdf==1.5
 Pillow==10.4.0
 aiofiles==24.1.0
+cryptography>=42.0.0

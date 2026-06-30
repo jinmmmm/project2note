@@ -13,6 +13,7 @@ from app.services.chat_service import (
     global_session_task_id,
 )
 from app.utils.response import success
+from app.utils.crypto import decrypt_secret
 
 router = APIRouter(prefix="/chat", tags=["chat"])
 
@@ -160,7 +161,7 @@ async def global_ask(req: GlobalAskRequest, db: Session = Depends(get_db), curre
         task_ids=req.task_ids,
         question=req.question,
         history=history,
-        api_key=provider.api_key,
+        api_key=decrypt_secret(provider.api_key),
         base_url=provider.base_url,
         model_name=_runtime_model_name(req, req.model_name),
         note_fallbacks=note_fallbacks,
@@ -252,7 +253,7 @@ async def ask_share(token: str, req: ShareAskRequest, db: Session = Depends(get_
         task_id=task_id,
         question=req.question,
         history=history,
-        api_key=provider.api_key,
+        api_key=decrypt_secret(provider.api_key),
         base_url=provider.base_url,
         model_name=_runtime_model_name(req, req.model_name),
         note_fallbacks=note_fallbacks,
@@ -340,7 +341,7 @@ async def ask(task_id: str, req: AskRequest, db: Session = Depends(get_db), curr
         task_id=task_id,
         question=req.question,
         history=history,
-        api_key=provider.api_key,
+        api_key=decrypt_secret(provider.api_key),
         base_url=provider.base_url,
         model_name=_runtime_model_name(req, req.model_name),
         note_fallbacks=note_fallbacks,

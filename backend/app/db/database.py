@@ -3,6 +3,7 @@ from sqlalchemy import Column, String, Text, DateTime, JSON, Integer, create_eng
 from sqlalchemy.orm import declarative_base, sessionmaker
 
 from app.config import settings
+from app.utils.crypto import encrypt_secret
 
 Base = declarative_base()
 
@@ -194,7 +195,7 @@ def seed_default_llm_provider():
             db.add(row)
         row.name = settings.llm_provider_name
         row.user_id = row.user_id or "legacy"
-        row.api_key = settings.llm_api_key
+        row.api_key = encrypt_secret(settings.llm_api_key)
         row.base_url = settings.llm_base_url.rstrip("/")
         row.enabled = "true"
         db.commit()
