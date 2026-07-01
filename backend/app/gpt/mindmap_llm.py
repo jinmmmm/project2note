@@ -71,6 +71,7 @@ def _dedupe_children(children: list[dict]) -> list[dict]:
 def _normalize_tree(node: dict, depth: int = 0) -> dict:
     """规整 AI 返回节点：统一 label/children/detail，封顶 4 层，同级去重合并。"""
     label = (node.get("root") or node.get("label") or node.get("title") or "未命名").strip()
+    label = label[:10] if len(label) > 10 else label
     out: dict = {"label": label}
     detail = (node.get("detail") or "").strip()
     if detail:

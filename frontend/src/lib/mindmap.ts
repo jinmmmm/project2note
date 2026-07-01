@@ -3,6 +3,16 @@ import type { MindmapData, MindmapMode, MindmapModeData, MindmapNode } from '@/s
 
 const TEMPLATE_HEADINGS = new Set(['视频基础信息', '结构化笔记', '工具与链接补充', '补充最新版本', '延伸知识点'])
 
+function cleanRootLabel(title: string): string {
+  let s = title
+    .replace(/\.?(mp4|mov|avi|mkv|flv|webm|m4v)$/i, '')
+    .replace(/第\s*\d+\s*集[·\s]*/g, '')
+    .replace(/^.+?[-–]\s*\d+\.\s*/, '')
+    .replace(/^\d+[.\s]+/, '')
+    .trim()
+  return truncateLabel(cleanLabel(s), 32)
+}
+
 export function normalizeMindmapData(data: any, fallbackTree: MindmapNode): MindmapData {
   if (data?.modes) {
     const modes = data.schema_version === 2 ? data.modes || {} : { origin: data.modes?.origin }
@@ -83,7 +93,7 @@ export function buildOriginTree(markdown: string, fallbackRoot = '视频笔记')
     : headings.filter((h) => !TEMPLATE_HEADINGS.has(h.label))
 
   const root: MindmapNode = {
-    label: fallbackRoot,
+    label: cleanRootLabel(fallbackRoot),
     headingId: structuredHeading?.id || headings[0].id,
     timestamp: structuredHeading?.timestamp ?? headings[0].timestamp,
   }
@@ -91,8 +101,10 @@ export function buildOriginTree(markdown: string, fallbackRoot = '视频笔记')
   const stack: { node: MindmapNode; depth: number }[] = [{ node: root, depth: baseDepth }]
 
   for (const h of sourceHeadings) {
+    const treeLevel = h.depth - baseDepth
+    const headingMaxLen = treeLevel <= 1 ? 24 : 18
     const node: MindmapNode = {
-      ...headingToNode(h.label),
+      ...headingToNode(h.label, headingMaxLen),
       headingId: h.id,
       timestamp: h.timestamp,
     }
@@ -143,6 +155,20 @@ function buildHeadingRanges(markdown: string, headings: DocumentHeading[]) {
   return ranges
 }
 
+function isKeywordBullet(rawBulletText: string): boolean {
+  const t = rawBulletText.trim()
+  if (/^\*\*/.test(t)) {
+    const boldContent = t.replace(/^\*\*([\s\S]+)\*\*$/, '$1').trim()
+    if (boldContent.length > 20 && /^(视频|我们|如果|当我|你可|这里|然后|首先|其次|最后|注意|重要|本节|本课|今天|下面|以下|接下来|这是|整体|总体|通过|利用|基于|结合|目前|当前|实际|关于|以下|根据|针对|依据|对于|随着)/.test(boldContent)) return false
+    return true
+  }
+  if (/^Step\s*\d+/i.test(t)) return true
+  if (/^[a-z][a-z_]*$/.test(t) && /^(description|body|schema|response|request|result|output|input|status|error|message|content|config|params|args|meta|info|context|callback|handler|method|endpoint|token|auth|item|default|custom|base|payload|query|data|type|name|value|key|flag|mode|state|props|options|settings|list|index|count|size|page|code|text|tag|ref|id|uid|uuid|hash|path|url|host|port|format|version|date|time|sort|order|filter|limit|offset|field|column|table|row|cell|node|edge|graph|root|parent|child|depth|level)$/.test(t)) return false
+  if (t.length > 25) return false
+  if (/^(如果|当我|视频|我们|你可|这里|然后|首先|其次|最后|注意|重要|本节|本课|今天|下面|以下|接下来|这是|整体|总体|通过|利用|基于|结合|目前|当前|实际|关于|根据|针对|依据|对于|随着)/.test(t)) return false
+  return true
+}
+
 function extractKeyPointNodes(lines: string[]): MindmapNode[] {
   const roots: { node: MindmapNode; indent: number }[] = []
   const stack: { node: MindmapNode; indent: number }[] = []
@@ -164,6 +190,7 @@ function extractKeyPointNodes(lines: string[]): MindmapNode[] {
 
     const list = /^(\s*)([-*+] |\d+[.)]\s+)(.+)$/.exec(raw)
     if (list) {
+      if (!isKeywordBullet(list[3])) continue
       const indent = list[1].length
       const node = lineToNode(list[3])
       if (!node) continue
@@ -200,7 +227,17 @@ function lineToNode(text: string): MindmapNode | null {
     // markmap rendering agree (tree stores plain text, markmap wraps
     // backticks in <code> tags which breaks label matching).
     const raw = boldLead[1].replace(/`([^`]+)`/g, '$1')
-    const label = truncateLabel(cleanLabel(raw), 18)
+    const boldStep = /^Step\s*\d+[：:]\s*(.{2,})$/i.exec(raw)
+    if (boldStep) {
+      const label = truncateLabel(cleanLabel(boldStep[1]), 18)
+      return label ? { label } : null
+    }
+    const boldChineseStep = /^第\s*[一二三四五六七八九十\d]+\s*[个阶段步章层类节期轮]+[：:]\s*(.{2,})$/.exec(raw)
+    if (boldChineseStep) {
+      const label = truncateLabel(cleanLabel(boldChineseStep[1]), 18)
+      return label ? { label } : null
+    }
+    const label = truncateLabel(cleanLabel(raw), 24)
     if (label) return { label }
   }
 
@@ -213,6 +250,20 @@ function lineToNode(text: string): MindmapNode | null {
     .trim()
   if (!value || value.length < 2) return null
 
+  // Step N: 描述 → use content after colon as label, works for plain and bold variants
+  const stepValue = /^Step\s*\d+[：:]\s*(.{2,})$/i.exec(value)
+  if (stepValue) {
+    const label = truncateLabel(cleanLabel(stepValue[1]), 24)
+    return label ? { label } : null
+  }
+
+  // 第N阶段/步/章: xxx → extract content after colon
+  const chineseStep = /^第\s*[一二三四五六七八九十\d]+\s*[个阶段步章层类节期轮]+[：:]\s*(.{2,})$/.exec(value)
+  if (chineseStep) {
+    const label = truncateLabel(cleanLabel(chineseStep[1]), 24)
+    return label ? { label } : null
+  }
+
   if (/^https?:\/\//i.test(value)) return { label: '参考链接', children: [{ label: value }] }
   if (/^(npm|pnpm|yarn|pip|brew|git|python|node|uv|npx)\s/.test(value)) return { label: '执行命令', children: [{ label: value }] }
 
@@ -220,12 +271,12 @@ function lineToNode(text: string): MindmapNode | null {
   const term = /^(.{2,24}?)\s*[：:—]\s*(.{2,})$/.exec(value)
   if (term) {
     return {
-      label: truncateLabel(cleanLabel(term[1]), 18),
+      label: truncateLabel(cleanLabel(term[1]), 24),
       children: [compactTextNode(term[2])],
     }
   }
 
-  const label = truncateLabel(cleanLabel(value), 20)
+  const label = truncateLabel(cleanLabel(value), 24)
   if (!label) return null
   return { label }
 }
@@ -235,9 +286,21 @@ function compactTextNode(value: string): MindmapNode {
   return { label }
 }
 
-function headingToNode(label: string): MindmapNode {
-  const cleaned = cleanLabel(label)
-  return { label: truncateLabel(cleaned, 22) }
+const HEADING_STRIP_PREFIXES = /^(如何|怎么|怎样|关于|浅谈|详解|深入|简单地?|快速|一起)/
+const HEADING_STRIP_SUFFIXES = /(的方法|的技巧|详解|介绍|指南|总结|分享|实践|讲解|原理|系统)$/
+
+function summarizeHeading(label: string, maxLen = 14): string {
+  let s = cleanLabel(label)
+  const colonIdx = s.search(/[：:]/)
+  if (colonIdx > 0 && colonIdx <= 10) {
+    s = s.slice(0, colonIdx).trim()
+  }
+  s = s.replace(HEADING_STRIP_PREFIXES, '').replace(HEADING_STRIP_SUFFIXES, '').trim()
+  return truncateLabel(s || cleanLabel(label), maxLen)
+}
+
+function headingToNode(label: string, maxLen = 14): MindmapNode {
+  return { label: summarizeHeading(label, maxLen) }
 }
 
 // Truncate at a word/phrase boundary so we never cut mid-word or leave dangling
@@ -262,13 +325,18 @@ export function truncateLabel(value: string, max = 32): string {
 
 function cleanLabel(value: string) {
   let s = value
-    .replace(/（[^）]{0,30}）/g, '')        // 去中文括号注释
-    .replace(/\([^)]{0,30}\)/g, '')          // 去英文括号注释
-    .replace(/“[^”]{0,30}”/g, '') // 去中文弯引号内容，如"毒蛇产品经理5.0"
+    .replace(/（[^）]{0,80}）/g, '')        // 去中文括号注释
+    .replace(/\([^)]{0,80}\)/g, '')          // 去英文括号注释
+    .replace(/”[^”]{0,30}”/g, '') // 去中文弯引号内容，如”毒蛇产品经理5.0”
     .replace(/\s+/g, ' ')
     .replace(/[。；;，,：:]$/g, '')
     .trim()
-  // 如果还是很长，且含"并/及/以及"这类并列连接，只取第一个动作短语
+  // 如果还是很长，先尝试在逗号处截断（去掉括注性描述）
+  if (s.length > 20) {
+    const commaIdx = s.search(/[，；]/)
+    if (commaIdx >= 4) s = s.slice(0, commaIdx).trim()
+  }
+  // 如果仍然很长，且含”并/及/以及”这类并列连接，只取第一个动作短语
   if (s.length > 16) {
     const m = s.match(/^(.{6,16})[，,]?(?:并|及|以及|而非|，|,)/)
     if (m) s = m[1].replace(/[，,]$/, '').trim()
@@ -279,6 +347,7 @@ function cleanLabel(value: string) {
 function isUsefulShortLine(text: string) {
   if (text.length > 90) return false
   if (/^第\s*\d+\s*节|目录|总结如下/.test(text)) return false
+  if (/^(视频|我们|如果|当我|你可|这里|然后|首先|其次|最后|注意|重要|本节|本课|今天|下面|以下|接下来|这是|整体|总体|通过|利用|基于|结合|目前|当前|实际|关于|根据|针对|依据|对于|随着)/.test(text)) return false
   return /[：:是为可将把需能由与及]|步骤|组件|阶段|命令|安装|注意|核心|包括|用于/.test(text)
 }
 

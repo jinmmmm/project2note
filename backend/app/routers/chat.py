@@ -314,7 +314,7 @@ async def ask(task_id: str, req: AskRequest, db: Session = Depends(get_db), curr
     if not task:
         raise BizException(404, "任务不存在")
 
-    provider = _runtime_provider(db, req.provider_id, req)
+    provider = _runtime_provider(db, req.provider_id, req, current_user.id)
     if not provider:
         raise BizException(400, "LLM 供应商不存在")
 

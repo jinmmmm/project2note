@@ -377,6 +377,18 @@ function CodeBlock({ className, children, ...props }: { className?: string; chil
   )
 }
 
+function splitRunOnFormulaBlockquote(markdown: string): string {
+  return markdown
+    .replace(
+      /^(?:>\s*)+(\*\*[^*\n]+\s*=\s*[^*\n]+\*\*)-(.+)$/gm,
+      (_match, formula: string, rest: string) => `> ${formula}\n\n- ${rest.trim()}`,
+    )
+    .replace(
+      /^(?:>\s*)+(\*\*[^*\n]+\s*=\s*[^*\n]+\*\*)\s*$/gm,
+      '> $1',
+    )
+}
+
 const MarkdownContent = React.memo(function MarkdownContent({
   content,
   style = 'beginner',
@@ -412,7 +424,7 @@ const MarkdownContent = React.memo(function MarkdownContent({
   const processed = useMemo(() => {
     const withMarks = preprocessTermMarks(displayContent, termDefs, style)
     const withTerms = linkifyTermsFromDefs(withMarks, termDefs)
-    return normalizeResidualMarkdownArtifacts(linkifyTimestamps(withTerms))
+    return splitRunOnFormulaBlockquote(normalizeResidualMarkdownArtifacts(linkifyTimestamps(withTerms)))
   }, [displayContent, termDefs, style])
 
   const components = useMemo((): Components => {

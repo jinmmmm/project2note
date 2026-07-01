@@ -118,6 +118,24 @@ function normalizeInlineMarkdownArtifacts(markdown: string): string {
     .replace(/__([^_\n]*?\S)\s+__/g, '__$1__')
 }
 
+function normalizeFormulaBlockquotes(markdown: string): string {
+  return markdown
+    .split('\n')
+    .flatMap((line) => {
+      const trimmed = line.trim()
+      const runOn = /^(?:>\s*)+(\*\*[^*\n]+[ \t]*=[ \t]*[^*\n]+\*\*)-(.+)$/.exec(trimmed)
+      if (runOn) {
+        return [`> ${runOn[1]}`, '', `- ${runOn[2].trim()}`]
+      }
+      const quotedFormula = /^(?:>\s*)+(\*\*[^*\n]+[ \t]*=[ \t]*[^*\n]+\*\*)[ \t]*$/.exec(trimmed)
+      if (quotedFormula) {
+        return `> ${quotedFormula[1]}`
+      }
+      return line
+    })
+    .join('\n')
+}
+
 function normalizeInlineSegmentArtifacts(segment: string): string {
   let result = segment
     .replace(/\*\*\s+([^*\n]*?\S)\s*\*\*/g, '**$1**')
@@ -160,7 +178,12 @@ function stripForDisplay(markdown: string, style: NoteStyle = 'beginner'): strin
     stripChapterBoilerplate(
       stripPolishLeadIn(
         stripBodyTocSection(
-          stripVideoTocSection(stripSectionsForStyle(normalizeNoteTimestamps(normalizeInlineMarkdownArtifacts(markdown || '')), style)),
+          stripVideoTocSection(
+            stripSectionsForStyle(
+              normalizeNoteTimestamps(normalizeFormulaBlockquotes(normalizeInlineMarkdownArtifacts(markdown || ''))),
+              style,
+            ),
+          ),
         ),
       ),
     ),

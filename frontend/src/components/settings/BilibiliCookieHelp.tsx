@@ -18,10 +18,14 @@ export default function BilibiliCookieHelp() {
             </a>
             ，并<strong>登录你的账号</strong>。
           </li>
-          <li>按键盘 <code className="rounded bg-white px-1 text-xs">F12</code> 打开开发者工具。</li>
+          <li>
+            按 <code className="rounded bg-white px-1 text-xs">F12</code>（Mac 为{' '}
+            <code className="rounded bg-white px-1 text-xs">⌘⌥I</code>）打开开发者工具。
+          </li>
           <li>
             切换到 <strong>「网络 / Network」</strong> 标签，然后按{' '}
-            <code className="rounded bg-white px-1 text-xs">F5</code> 刷新页面。
+            <code className="rounded bg-white px-1 text-xs">F5</code>（Mac 为{' '}
+            <code className="rounded bg-white px-1 text-xs">⌘R</code>）刷新页面。
           </li>
           <li>在列表里随便点一个请求（如 <code className="text-xs">nav</code> 或任意接口）。</li>
           <li>

@@ -78,6 +78,11 @@ function escapeRegExp(text: string): string {
   return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 }
 
+function isFormulaLine(line: string): boolean {
+  return /^>\s+\*\*[^*\n]+\s*=\s*[^*\n]+\*\*\s*$/.test(line) ||
+    /^\*\*[^*\n]+\s*=\s*[^*\n]+\*\*\s*$/.test(line)
+}
+
 function isAlreadyLinked(line: string, term: string): boolean {
   const enc = encodeURIComponent(term)
   return (
@@ -105,6 +110,7 @@ export function linkifyTermsFromDefs(markdown: string, entries: TermEntry[]): st
     }
     if (
       inFence ||
+      isFormulaLine(trimmed) ||
       /^#{1,6}\s/.test(trimmed) ||
       trimmed.startsWith('|') ||
       trimmed.includes('<!-- term-defs') ||
@@ -125,6 +131,9 @@ export function linkifyTermsFromDefs(markdown: string, entries: TermEntry[]): st
 
       const escaped = escapeRegExp(term)
       const patterns = [
+        // **Term（alias）** or **Term** — consume alias inside bold markers
+        new RegExp(`(?<!\\[)\\*\\*${escaped}(?:[（(][^）)\\n]{1,40}[）)])?\\*\\*(?!\\])`, 'i'),
+        // bare Term or **Term** without alias
         new RegExp(`(?<!\\[)(?:\\*\\*)?${escaped}(?:\\*\\*)?(?!\\])`, 'i'),
         new RegExp(`==\\s*${escaped}\\s*==`, 'i'),
       ]
@@ -165,6 +174,7 @@ export function preprocessTermMarks(
     }
     if (
       inFence ||
+      isFormulaLine(trimmed) ||
       trimmed.startsWith('|') ||
       trimmed.includes('<!-- term-defs') ||
       trimmed.includes('<!-- glossary')
@@ -189,9 +199,18 @@ export function preprocessTermMarks(
 
     for (const entry of entries) {
       const key = entry.term.toLowerCase()
+      const escaped = escapeRegExp(entry.term)
+      // Matches **Term** or **Term（alias）** (alias inside bold markers)
+      const reWithOptAlias = new RegExp(
+        `\\*\\*(${escaped}(?:[（(][^）)\\n]{1,40}[）)])??)\\*\\*`,
+        'i',
+      )
+      const reWithOptAliasGlobal = new RegExp(
+        `\\*\\*(${escaped}(?:[（(][^）)\\n]{1,40}[）)])??)\\*\\*`,
+        'gi',
+      )
       if (linked.has(key)) {
-        const escaped = escapeRegExp(entry.term)
-        processed = processed.replace(new RegExp(`\\*\\*(${escaped})\\*\\*`, 'gi'), '$1')
+        processed = processed.replace(reWithOptAliasGlobal, '$1')
         continue
       }
       if (isAlreadyLinked(processed, entry.term)) {
@@ -199,12 +218,10 @@ export function preprocessTermMarks(
         continue
       }
 
-      const escaped = escapeRegExp(entry.term)
-      const re = new RegExp(`\\*\\*(${escaped})\\*\\*`, 'i')
-      if (!re.test(processed)) continue
-      processed = processed.replace(re, (_m, t: string) => {
+      if (!reWithOptAlias.test(processed)) continue
+      processed = processed.replace(reWithOptAlias, () => {
         linked.add(key)
-        return `[${t}](${termLinkHref(entry.term)})`
+        return `[${entry.term}](${termLinkHref(entry.term)})`
       })
     }
 

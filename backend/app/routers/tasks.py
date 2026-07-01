@@ -31,7 +31,7 @@ from app.services.note_index_service import reindex_task_note
 from app.services.vector_store import vector_store
 from app.gpt.note_llm import NoteLLM
 from app.gpt.mindmap_llm import generate_mindmap
-from app.gpt.prompts import extract_note_generated_at, patch_note_basic_info
+from app.gpt.prompts import extract_note_generated_at, patch_note_basic_info, normalize_formula_blockquotes
 from app.utils.markdown_sections import extract_section, replace_section
 from app.utils.response import success
 from app.utils.time_utils import now_local_str
@@ -416,8 +416,8 @@ def get_task(task_id: str, db: Session = Depends(get_db), current_user: User = D
 
     data = _task_to_dict(task)
     data["note"] = {
-        "markdown_raw": note.markdown_raw if note else None,
-        "markdown_edited": note.markdown_edited if note else None,
+        "markdown_raw": normalize_formula_blockquotes(note.markdown_raw) if note and note.markdown_raw else None,
+        "markdown_edited": normalize_formula_blockquotes(note.markdown_edited) if note and note.markdown_edited else None,
         "mindmap_data": note.mindmap_data if note else None,
     } if note else None
     data["transcript"] = {
@@ -678,6 +678,7 @@ async def polish_note(task_id: str, req: PolishNoteRequest, db: Session = Depend
     else:
         updated = polished
 
+    updated = normalize_formula_blockquotes(updated)
     note.markdown_edited = updated
     note.updated_at = datetime.utcnow()
     db.commit()
@@ -774,7 +775,7 @@ def update_note(task_id: str, req: UpdateNoteRequest, db: Session = Depends(get_
     note = db.query(Note).filter(Note.task_id == task_id, Note.user_id == current_user.id).first()
     if not note:
         raise BizException(404, "笔记不存在")
-    note.markdown_edited = req.markdown_edited
+    note.markdown_edited = normalize_formula_blockquotes(req.markdown_edited)
     note.updated_at = datetime.utcnow()
     db.commit()
     reindex_task_note(db, task_id)

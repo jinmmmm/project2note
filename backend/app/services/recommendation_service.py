@@ -225,5 +225,6 @@ async def refresh_recommendations(
                 decrypt_secret(provider.api_key),
                 provider.base_url,
                 model_name or settings.llm_model_name,
+            )
 
     return await search_videos_for_keywords(items, cookie, limit=limit, sort=sort_key)
