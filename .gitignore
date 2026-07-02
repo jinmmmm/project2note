@@ -9,5 +9,6 @@ node_modules/
 frontend/dist/
 .DS_Store
 *.log
+*.tsbuildinfo
 chroma/
 .claude/
