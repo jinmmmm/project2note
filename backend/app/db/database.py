@@ -154,6 +154,26 @@ class ShareLink(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
 
+class KnowledgeCard(Base):
+    __tablename__ = "knowledge_cards"
+
+    id = Column(String, primary_key=True)
+    task_id = Column(String, nullable=False, index=True)
+    user_id = Column(String, nullable=True, index=True)
+    style = Column(String, nullable=False)  # "beginner" | "professional"
+    sort_order = Column(Integer, nullable=False)
+    front_title = Column(String, nullable=False)
+    front_subtitle = Column(Text, nullable=True)  # 小白:一句话结论; 专业:层级+标签
+    back_content = Column(Text, nullable=False)  # 小白:通俗解释; 专业:精准知识点
+    back_pitfalls = Column(Text, nullable=True)  # 仅小白版:避坑提醒
+    personal_notes = Column(Text, nullable=True)
+    review_status = Column(String, default="none")  # "none" | "mastered" | "needs_review"
+    source_heading = Column(String, nullable=True)
+    source_term = Column(String, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
 class Recommendation(Base):
     __tablename__ = "recommendations"
 
@@ -241,6 +261,7 @@ def _migrate_auth_columns():
             "feishu_sync_records",
             "share_links",
             "recommendations",
+            "knowledge_cards",
         ):
             rows = conn.execute(text(f"PRAGMA table_info({table})")).fetchall()
             cols = {row[1] for row in rows}

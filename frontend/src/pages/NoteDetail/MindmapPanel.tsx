@@ -21,6 +21,7 @@ import {
   ChevronRight,
 } from 'lucide-react'
 import { taskApi, type MindmapData, type MindmapMode, type MindmapNode } from '@/services'
+import type { NoteStyle } from '@/lib/terms'
 import { useLlmConfig } from '@/hooks/useLlmConfig'
 import toast from 'react-hot-toast'
 import {
@@ -43,6 +44,7 @@ interface Props {
   taskId: string
   noteMarkdown: string
   videoTitle?: string
+  style: NoteStyle
   mindmapData: MindmapData | null | undefined
   onSeek: (seconds: number) => void
   onScrollToHeading: (id: string) => void
@@ -96,6 +98,7 @@ export default function MindmapPanel({
   taskId,
   noteMarkdown,
   videoTitle,
+  style,
   mindmapData,
   onSeek,
   onScrollToHeading,
@@ -108,8 +111,8 @@ export default function MindmapPanel({
   const { requestPayload } = useLlmConfig()
 
   const originTree = useMemo(
-    () => buildOriginTree(noteMarkdown, videoTitle || '视频笔记'),
-    [noteMarkdown, videoTitle],
+    () => buildOriginTree(noteMarkdown, videoTitle || '视频笔记', style),
+    [noteMarkdown, videoTitle, style],
   )
   const initialData = useMemo(
     () => normalizeMindmapData(mindmapData, originTree),
@@ -152,7 +155,7 @@ export default function MindmapPanel({
   // origin 树随笔记变化重建（仅未编辑时）
   useEffect(() => {
     if (mode === 'origin' && !edited) {
-      setTree(buildOriginTree(noteMarkdown, videoTitle || '视频笔记'))
+      setTree(buildOriginTree(noteMarkdown, videoTitle || '视频笔记', style))
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [noteMarkdown, mode, edited])
@@ -414,7 +417,7 @@ export default function MindmapPanel({
 
   const resetOriginToNote = () => {
     if (!window.confirm('按当前笔记内容重建跟随笔记导图，已有的手动编辑将被覆盖，确定？')) return
-    const t = buildOriginTree(noteMarkdown, videoTitle || '视频笔记')
+    const t = buildOriginTree(noteMarkdown, videoTitle || '视频笔记', style)
     setMode('origin')
     setTree(t)
     setEdited(false)

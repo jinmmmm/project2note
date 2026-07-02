@@ -8,7 +8,7 @@ from typing import Optional, Any
 from sqlalchemy.orm import Session
 
 from app.config import settings
-from app.db.database import SessionLocal, Task, Note, Transcript, Recommendation, ProviderConfig, PlatformCookie
+from app.db.database import SessionLocal, Task, Note, Transcript, Recommendation, ProviderConfig, PlatformCookie, KnowledgeCard
 from app.downloaders.platforms import BilibiliDownloader, DouyinDownloader, LocalDownloader
 from app.downloaders.bilibili_subtitle import fetch_bilibili_subtitles
 from app.exceptions.biz_exception import BizException
@@ -19,6 +19,7 @@ from app.utils.ffmpeg_helper import extract_audio, extract_audio_async
 from app.utils.time_utils import now_local_str
 from app.utils.crypto import decrypt_secret
 from app.gpt.note_llm import NoteLLM
+from app.gpt.cards_llm import generate_cards_from_note_async
 from app.gpt.prompts import postprocess_note_markdown, embed_screenshots_into_note
 from app.services.screenshot_vision_refine import VisionRefineClient
 from app.services.vector_store import vector_store
@@ -165,6 +166,36 @@ async def _load_or_fetch_web_context(db: Session, task: Task, full_text: str, no
     return web_context
 
 
+async def _generate_cards(db: Session, task: Task, markdown: str, llm: NoteLLM):
+    """Generate knowledge cards from note markdown, skip if already exist for this style."""
+    import uuid as _uuid
+    existing = db.query(KnowledgeCard).filter(
+        KnowledgeCard.task_id == task.id,
+        KnowledgeCard.style == task.style,
+    ).first()
+    if existing:
+        return
+    try:
+        card_dicts = await generate_cards_from_note_async(llm, markdown, task.style or "beginner")
+    except Exception:
+        return  # Card generation failure should not block the pipeline
+    for i, cd in enumerate(card_dicts):
+        card = KnowledgeCard(
+            id=str(_uuid.uuid4()),
+            task_id=task.id,
+            user_id=task.user_id,
+            style=task.style or "beginner",
+            sort_order=i,
+            front_title=cd.get("title", ""),
+            front_subtitle=cd.get("conclusion") or cd.get("hierarchy"),
+            back_content=cd.get("explanation") or cd.get("knowledge", ""),
+            back_pitfalls="\n".join(cd["pitfalls"]) if isinstance(cd.get("pitfalls"), list) else cd.get("pitfalls"),
+            source_heading=cd.get("source_heading"),
+        )
+        db.add(card)
+    db.commit()
+
+
 async def run_regenerate_pipeline(task_id: str, user_llm_config: Optional[dict] = None):
     """Reuse transcript/video; regenerate note + recommendations only."""
     db = SessionLocal()
@@ -271,6 +302,10 @@ async def run_regenerate_pipeline(task_id: str, user_llm_config: Optional[dict] 
         note.markdown_raw = markdown
         note.markdown_edited = markdown
         db.commit()
+
+        _update_task(db, task_id, progress="generating_cards")
+        _check_canceled(db, task_id)
+        await _generate_cards(db, task, markdown, llm)
 
         _update_task(db, task_id, progress="recommendations")
         _check_canceled(db, task_id)
@@ -530,9 +565,12 @@ async def run_pipeline(task_id: str, user_llm_config: Optional[dict] = None):
         note.markdown_edited = markdown
         db.commit()
 
+        _update_task(db, task_id, progress="generating_cards")
+        _check_canceled(db, task_id)
+        await _generate_cards(db, task, markdown, llm)
+
         _update_task(db, task_id, progress="recommendations")
         _check_canceled(db, task_id)
-
         rec_items = await _generate_recommendations(db, markdown)
 
         rec = db.query(Recommendation).filter(Recommendation.task_id == task_id).first()
@@ -543,8 +581,7 @@ async def run_pipeline(task_id: str, user_llm_config: Optional[dict] = None):
         db.commit()
 
         _update_task(db, task_id, progress="indexing")
-        _check_canceled(db, task_id)
-
+        vector_store.delete(task_id)
         vector_store.index_task(
             task_id,
             cleaned_segments,

@@ -11,7 +11,7 @@ from pathlib import Path
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
-from app.db.database import get_db, Task, Note, Transcript, Recommendation, ShareLink, ChatMessage, ProviderConfig, PlatformCookie, User
+from app.db.database import get_db, Task, Note, Transcript, Recommendation, ShareLink, ChatMessage, ProviderConfig, PlatformCookie, User, KnowledgeCard
 from app.auth import get_current_user
 from app.config import settings
 from app.exceptions.biz_exception import BizException
@@ -98,6 +98,15 @@ def _default_clone_title(source_title: str | None, style: str) -> str:
     base = (source_title or "未命名视频").strip()
     style_label = "小白" if style == "beginner" else "专业"
     return f"{base}（{style_label}）"
+
+
+def _batch_task_title(collection_name: str, page_num: int, part_title: str = "") -> str:
+    base = collection_name.strip() or "未命名合集"
+    part = (part_title or "").strip()
+    generic_part = part.lower() == f"p{page_num}" or part == f"P{page_num}"
+    if part and not generic_part:
+        return f"{base} - 第{page_num}集·{part}"
+    return f"{base} - 第{page_num}集"
 
 
 def _patch_task_title_in_notes(db: Session, task: Task):
@@ -348,13 +357,7 @@ async def batch_create_tasks(req: BatchCreateTaskRequest, db: Session = Depends(
         if req.page_titles and i < len(req.page_titles):
             part_title = req.page_titles[i].strip()
         page_num = i + 1
-        # 父任务标题 = 用户输入的笔记标题；子任务标题 = 笔记标题 - 第N集·原生标题
-        if i == 0:
-            title = req.collection_name
-        elif part_title and part_title.lower() != f"p{page_num}" and part_title != f"P{page_num}":
-            title = f"{req.collection_name} - 第{page_num}集·{part_title}"
-        else:
-            title = f"{req.collection_name} - 第{page_num}集"
+        title = _batch_task_title(req.collection_name, page_num, part_title)
 
         task_id = str(uuid.uuid4())
         task = Task(
@@ -615,6 +618,7 @@ def delete_task(task_id: str, db: Session = Depends(get_db), current_user: User 
         db.query(Recommendation).filter(Recommendation.task_id == child.id, Recommendation.user_id == current_user.id).delete()
         db.query(ChatMessage).filter(ChatMessage.task_id == child.id, ChatMessage.user_id == current_user.id).delete()
         db.query(ShareLink).filter(ShareLink.task_id == child.id, ShareLink.user_id == current_user.id).delete()
+        db.query(KnowledgeCard).filter(KnowledgeCard.task_id == child.id).delete()
         db.delete(child)
         vector_store.delete(child.id)
     db.query(Note).filter(Note.task_id == task_id, Note.user_id == current_user.id).delete()
@@ -622,6 +626,7 @@ def delete_task(task_id: str, db: Session = Depends(get_db), current_user: User 
     db.query(Recommendation).filter(Recommendation.task_id == task_id, Recommendation.user_id == current_user.id).delete()
     db.query(ChatMessage).filter(ChatMessage.task_id == task_id, ChatMessage.user_id == current_user.id).delete()
     db.query(ShareLink).filter(ShareLink.task_id == task_id, ShareLink.user_id == current_user.id).delete()
+    db.query(KnowledgeCard).filter(KnowledgeCard.task_id == task_id).delete()
     db.delete(task)
     db.commit()
     vector_store.delete(task_id)
@@ -836,7 +841,7 @@ async def generate_mindmap_route(task_id: str, req: GenerateMindmapRequest, db: 
 
     try:
         llm = NoteLLM(decrypt_secret(provider.api_key), provider.base_url, _runtime_model_name(task, user_llm_config))
-        tree = await asyncio.to_thread(generate_mindmap, llm, markdown, req.video_type, req.instruction)
+        tree = await asyncio.to_thread(generate_mindmap, llm, markdown, req.video_type, req.instruction, task.style or "beginner")
     except Exception as e:
         raise BizException(500, f"AI 导图生成失败：{e}")
 

@@ -583,7 +583,7 @@ const MarkdownContent = React.memo(function MarkdownContent({
   return (
     <div
       className={cn(
-        'note-content px-8 py-6',
+        'note-content px-8 pb-6 pt-3',
         style === 'beginner' ? 'note-content-beginner' : 'note-content-professional',
       )}
     >

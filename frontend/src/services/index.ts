@@ -368,3 +368,33 @@ export const bilibiliApi = {
   videoInfo: (url: string) =>
     api.get('/bilibili/video-info', { params: { url } }).then((r) => unwrap<BilibiliVideoInfo>(r)),
 }
+
+export interface KnowledgeCardData {
+  id: string
+  task_id: string
+  style: string
+  sort_order: number
+  front_title: string
+  front_subtitle: string | null
+  back_content: string
+  back_pitfalls: string | null
+  personal_notes: string | null
+  review_status: 'none' | 'mastered' | 'needs_review'
+  source_heading: string | null
+  source_term: string | null
+}
+
+export const cardsApi = {
+  list: (taskId: string) =>
+    api.get(`/tasks/${taskId}/cards`).then((r) => unwrap<KnowledgeCardData[]>(r)),
+  create: (taskId: string, data: { front_title: string; front_subtitle?: string; back_content?: string; back_pitfalls?: string }) =>
+    api.post(`/tasks/${taskId}/cards`, data).then((r) => unwrap<KnowledgeCardData>(r)),
+  update: (taskId: string, cardId: string, data: Partial<Pick<KnowledgeCardData, 'front_title' | 'front_subtitle' | 'back_content' | 'back_pitfalls' | 'personal_notes' | 'review_status' | 'sort_order'>>) =>
+    api.put(`/tasks/${taskId}/cards/${cardId}`, data).then((r) => unwrap<KnowledgeCardData>(r)),
+  delete: (taskId: string, cardId: string) =>
+    api.delete(`/tasks/${taskId}/cards/${cardId}`).then((r) => unwrap(r)),
+  updateReview: (taskId: string, cardId: string, reviewStatus: KnowledgeCardData['review_status']) =>
+    api.patch(`/tasks/${taskId}/cards/${cardId}/review`, { review_status: reviewStatus }).then((r) => unwrap<KnowledgeCardData>(r)),
+  generate: (taskId: string, style?: string, force = false) =>
+    api.post(`/tasks/${taskId}/cards/generate`, { style, force }, { timeout: LONG_REQUEST_TIMEOUT }).then((r) => unwrap<KnowledgeCardData[]>(r)),
+}

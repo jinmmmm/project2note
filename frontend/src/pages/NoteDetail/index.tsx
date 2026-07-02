@@ -21,6 +21,7 @@ import RegenerateTaskPanel from '@/components/RegenerateTaskPanel'
 import FeishuSyncDialog from '@/components/FeishuSyncDialog'
 import NoteExportDialog from '@/components/NoteExportDialog'
 import RecommendPanel from '@/components/RecommendPanel'
+import KnowledgeCardPanel from '@/components/KnowledgeCardPanel'
 import PlaceholderPanel from '@/components/PlaceholderPanel'
 import MindmapPanel from './MindmapPanel'
 import ActionTip from '@/components/ActionTip'
@@ -649,17 +650,15 @@ export default function NoteDetailPage() {
               />
             )
           )}
-          {tab === 'cards' && (
-            <PlaceholderPanel
-              title="知识卡片"
-              description="将在此展示从笔记提炼的可复习知识卡片，功能即将上线。"
-            />
+          {tab === 'cards' && taskId && (
+            <KnowledgeCardPanel taskId={taskId} style={noteStyle} />
           )}
           {tab === 'mindmap' && taskId && (
             <MindmapPanel
               taskId={taskId}
               noteMarkdown={editContent}
               videoTitle={task?.title}
+              style={noteStyle}
               mindmapData={task?.note?.mindmap_data ?? null}
               onSeek={seekFromTimestamp}
               onScrollToHeading={scrollToHeading}

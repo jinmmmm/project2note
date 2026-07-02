@@ -1,7 +1,20 @@
 import { parseAllHeadingsFromDisplay, type DocumentHeading } from './markdown'
 import type { MindmapData, MindmapMode, MindmapModeData, MindmapNode } from '@/services'
 
-const TEMPLATE_HEADINGS = new Set(['视频基础信息', '结构化笔记', '工具与链接补充', '补充最新版本', '延伸知识点'])
+// Beginner skips "工具与链接补充"; Professional skips "补充最新版本"
+const BEGINNER_SKIP = new Set(['视频基础信息', '结构化笔记', '工具与链接补充', '延伸知识点'])
+const PROFESSIONAL_SKIP = new Set(['视频基础信息', '结构化笔记', '补充最新版本', '延伸知识点'])
+// 第2节开场 preamble 标题（阅读引导，不是知识结构）：两版均不得作为导图分支
+const PREAMBLE_TITLES = new Set([
+  '课前须知', '适合人群', '不适合人群', '前置知识检查', '学完能达成的目标',
+  '核心结论', '核心要点速览',
+  // 第4节延伸知识点（非第2节内容）
+  '延伸知识点', '延伸知识', '前置基础', '后续进阶',
+])
+
+function skipSetForStyle(style: string): Set<string> {
+  return style === 'professional' ? PROFESSIONAL_SKIP : BEGINNER_SKIP
+}
 
 function cleanRootLabel(title: string): string {
   let s = title
@@ -76,7 +89,7 @@ export function setModeEntry(
   }
 }
 
-export function buildOriginTree(markdown: string, fallbackRoot = '视频笔记'): MindmapNode {
+export function buildOriginTree(markdown: string, fallbackRoot = '视频笔记', style: string = 'beginner'): MindmapNode {
   const headings = parseAllHeadingsFromDisplay(markdown)
   if (headings.length === 0) return { label: fallbackRoot }
 
@@ -89,8 +102,9 @@ export function buildOriginTree(markdown: string, fallbackRoot = '视频笔记')
   const sourceHeadings = structuredHeading
     ? headings
         .slice(structuredIndex + 1, structuredEnd > -1 ? structuredEnd : headings.length)
-        .filter((h) => !TEMPLATE_HEADINGS.has(h.label))
-    : headings.filter((h) => !TEMPLATE_HEADINGS.has(h.label))
+        .filter((h) => !skipSetForStyle(style).has(h.label))
+        .filter((h) => !PREAMBLE_TITLES.has(h.label))
+    : headings.filter((h) => !skipSetForStyle(style).has(h.label)).filter((h) => !PREAMBLE_TITLES.has(h.label))
 
   const root: MindmapNode = {
     label: cleanRootLabel(fallbackRoot),
@@ -102,7 +116,7 @@ export function buildOriginTree(markdown: string, fallbackRoot = '视频笔记')
 
   for (const h of sourceHeadings) {
     const treeLevel = h.depth - baseDepth
-    const headingMaxLen = treeLevel <= 1 ? 24 : 18
+    const headingMaxLen = treeLevel <= 1 ? 24 : 20
     const node: MindmapNode = {
       ...headingToNode(h.label, headingMaxLen),
       headingId: h.id,
@@ -212,9 +226,9 @@ function extractKeyPointNodes(lines: string[]): MindmapNode[] {
     }
   }
 
-  const nodes = roots.map((r) => r.node)
+  const nodes = roots.map((r) => r.node).filter((n) => !PREAMBLE_TITLES.has(n.label))
   if (nodes.length) return dedupeNodes(nodes)
-  return dedupeNodes(shortParagraphs)
+  return dedupeNodes(shortParagraphs.filter((n) => !PREAMBLE_TITLES.has(n.label)))
 }
 
 function lineToNode(text: string): MindmapNode | null {

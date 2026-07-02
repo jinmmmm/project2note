@@ -109,6 +109,14 @@ export function stripSectionsForStyle(markdown: string, _style: NoteStyle = 'beg
   return result
 }
 
+function normalizeProfessionalSummaryLabel(markdown: string): string {
+  return markdown
+    .replace(/\*\*\s*TL\s*;?\s*DR\s*\*\*\s*[：:]?/gi, '**核心结论**：')
+    .replace(/^\s*TL\s*;?\s*DR\s*[：:]?/gim, '核心结论：')
+    .replace(/\*\*\s*核心结论\s*\*\*\s*(?![：:])/g, '**核心结论**：')
+    .replace(/^\s*核心结论\s*(?![：:])/gim, '核心结论：')
+}
+
 function normalizeInlineMarkdownArtifacts(markdown: string): string {
   return markdown
     .replace(/\\([*_`])/g, '$1')
@@ -180,7 +188,7 @@ function stripForDisplay(markdown: string, style: NoteStyle = 'beginner'): strin
         stripBodyTocSection(
           stripVideoTocSection(
             stripSectionsForStyle(
-              normalizeNoteTimestamps(normalizeFormulaBlockquotes(normalizeInlineMarkdownArtifacts(markdown || ''))),
+              normalizeNoteTimestamps(normalizeFormulaBlockquotes(normalizeInlineMarkdownArtifacts(normalizeProfessionalSummaryLabel(markdown || '')))),
               style,
             ),
           ),
@@ -296,6 +304,8 @@ interface HeadingWalkState {
   inExtensionBlock: boolean
   extensionPrefix: string
   extensionNum: number
+  currentMainPrefix: string
+  currentSubNum: number
 }
 
 function createHeadingWalkState(): HeadingWalkState {
@@ -307,6 +317,8 @@ function createHeadingWalkState(): HeadingWalkState {
     inExtensionBlock: false,
     extensionPrefix: '',
     extensionNum: 0,
+    currentMainPrefix: '',
+    currentSubNum: 0,
   }
 }
 
@@ -387,9 +399,14 @@ function walkHeadingLine(
   } else if (state.inExtensionBlock && isExtensionSubheading(title, label)) {
     state.extensionNum += 1
     displayNum = `${state.extensionPrefix}.${state.extensionNum}`
+  } else if (depth >= 3 && state.currentMainPrefix) {
+    state.currentSubNum += 1
+    displayNum = `${state.currentMainPrefix}.${state.currentSubNum}`
   } else {
     state.mainNum += 1
     state.chapterNum = 0
+    state.currentMainPrefix = String(state.mainNum)
+    state.currentSubNum = 0
     displayNum = String(state.mainNum)
     if (isSummarySubBlockStart(title, label, depth)) {
       state.inChapterBlock = true

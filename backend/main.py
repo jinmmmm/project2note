@@ -12,7 +12,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 from app.config import settings
 from app.db.database import init_db
 from app.exceptions.handlers import register_exception_handlers
-from app.routers import tasks, upload, settings as settings_router, chat, feishu, share, health, bilibili, auth
+from app.routers import tasks, upload, settings as settings_router, chat, feishu, share, health, bilibili, auth, cards
 from app.services.pipeline import task_executor
 
 
@@ -43,6 +43,7 @@ app.include_router(chat.router, prefix="/api")
 app.include_router(feishu.router, prefix="/api")
 app.include_router(share.router, prefix="/api")
 app.include_router(bilibili.router, prefix="/api")
+app.include_router(cards.router, prefix="/api")
 
 # Serve uploaded videos and static files
 uploads_path = settings.uploads_path

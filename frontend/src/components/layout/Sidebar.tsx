@@ -88,6 +88,12 @@ export default function Sidebar({ onRefresh }: Props) {
 
   const isResumeTask = (task: Task) => task.status === 'FAILED' || task.status === 'CANCELED'
 
+  const getCollectionGroupTitle = (parent?: Task | null) => {
+    const title = parent?.title?.trim()
+    if (!title) return parent?.id || '未命名合集'
+    return title.replace(/\s*-\s*第\d+集(?:[·.．\-\s].*)?$/, '') || title
+  }
+
   const groupedTaskList = () => {
     // Build parent → children map
     const parentMap: Record<string, Task[]> = {}
@@ -115,7 +121,7 @@ export default function Sidebar({ onRefresh }: Props) {
       const totalAll = visibleInGroup.length
       const hasProcessing = visibleInGroup.some((t) => t.status === 'PROCESSING' || t.status === 'PENDING')
       const hasFailed = visibleInGroup.some((t) => t.status === 'FAILED')
-      const groupTitle = parent?.title || parentId
+      const groupTitle = getCollectionGroupTitle(parent)
       // All tasks in group (including filtered-out parent) for deletion
       const allInGroup = parent ? [parent, ...children] : children
 
@@ -642,12 +648,12 @@ export default function Sidebar({ onRefresh }: Props) {
             <FolderOutput className="h-3.5 w-3.5" />
           </button>
         )}
-        {(task.status === 'FAILED' || task.status === 'CANCELED') && (
+        {['COMPLETED', 'FAILED', 'CANCELED'].includes(task.status) && (
           <button
             type="button"
             onClick={(e) => handleRetry(e, task)}
             className="rounded p-1 text-slate-300 opacity-0 transition-opacity hover:bg-blue-50 hover:text-blue-500 group-hover:opacity-100"
-            title="重新生成"
+            title="重新生成本条"
           >
             <RotateCcw className="h-3.5 w-3.5" />
           </button>

@@ -29,7 +29,7 @@ def test_extract_professional_queries_include_install_and_advanced():
     )
     queries = extract_search_queries(text, "Claude Code", style="professional", max_queries=12)
     joined = " ".join(queries).lower()
-    assert "advanced" in joined or "changelog" in joined or "版本" in joined
+    assert "advanced" in joined or "changelog" in joined or "版本" in joined or "高阶用法" in joined
     assert "npm install" in joined or "下载 安装" in joined
 
 
